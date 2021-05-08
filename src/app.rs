@@ -55,6 +55,21 @@ usage:
         .about("show the related date along with file names")
         .takes_value(false);
 
+    let folders = Arg::new("folders")
+        .short('F')
+        .long("folders")
+        .about("only display directories")
+        .takes_value(false)
+        .conflicts_with("files");
+
+    let files = Arg::new("files")
+        .short('f')
+        .long("files")
+        .about("only display regular files")
+        .long_about("do not display directories")
+        .takes_value(false)
+        .conflicts_with("folders");
+
     let path = Arg::new("path")
         .short('p')
         .long("path")
@@ -71,6 +86,8 @@ usage:
         .arg(hidden)
         .arg(not_recursive)
         .arg(time)
+        .arg(folders)
+        .arg(files)
         .arg(path)
         .arg(n)
 }

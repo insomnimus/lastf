@@ -15,6 +15,8 @@ struct Cmd {
     hidden: bool,
     not_recursive: bool,
     time: bool,
+    folders: bool,
+    files: bool,
     n: u8,
     path: String,
 }
@@ -36,6 +38,9 @@ impl Cmd {
 
         let not_recursive = matches.is_present("not-recursive");
         let time = matches.is_present("time");
+        let files = matches.is_present("files");
+        let folders = matches.is_present("folders");
+
         let oldest = matches.is_present("oldest");
         let created = matches.is_present("created");
         let modified = matches.is_present("modified");
@@ -45,6 +50,8 @@ impl Cmd {
         Self {
             not_recursive,
             modified,
+            files,
+            folders,
             accessed,
             created,
             oldest,
@@ -134,10 +141,20 @@ impl Cmd {
     fn evaluate(&self, p: &Path) -> Option<SystemTime> {
         match p.metadata() {
             Ok(md) => {
-                if !self.not_recursive && md.is_dir() {
-                    self.evaluate_dir(p)
+                if md.is_dir() {
+                    if self.files {
+                        None
+                    } else if self.not_recursive {
+                        self.evaluate_file(&md)
+                    } else {
+                        self.evaluate_dir(p)
+                    }
                 } else {
-                    self.evaluate_file(&md)
+                    if self.folders {
+                        None
+                    } else {
+                        self.evaluate_file(&md)
+                    }
                 }
             }
             _ => None,
