@@ -10,7 +10,7 @@ pub fn new() -> App<'static> {
         .help_template(
             "{bin}, {about}
 usage:
-	{bin} [OPTIONS] [N]
+	{bin} [OPTIONS] [max]
 {unified}
 {after-help}",
         )
