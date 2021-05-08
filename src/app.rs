@@ -1,4 +1,4 @@
-use clap::{crate_name, crate_version, App, Arg};
+use clap::{crate_name, crate_version, App, AppSettings, Arg};
 
 pub fn new() -> App<'static> {
     let app = App::new(crate_name!())
@@ -6,12 +6,16 @@ pub fn new() -> App<'static> {
         .about("display last modified files and directories")
         .long_about("display last used/modified/created files and directories")
         .long_version(crate_version!())
+		.setting(AppSettings::UnifiedHelpMessage)
         .help_template(
             "{bin}, {about}
 usage:
 	{bin} [OPTIONS] [N]
-{all-args}",
-        );
+{unified}
+{after-help}",
+        )
+		.after_long_help("if none of the --accessed, --modified or --created flags are set, the behaviour is the same as if
+the --created and the --modified flags were set");
 
     let modified = Arg::new("modified")
         .short('m')
