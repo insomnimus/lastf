@@ -1,8 +1,9 @@
 /target
 *.bash
-*.elvish
+*.elv
 *.fish
 *.ps1
 *.zsh
 *.sh
 _*
+lf.*
