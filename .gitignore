@@ -1,0 +1,8 @@
+/target
+*.bash
+*.elvish
+*.fish
+*.ps1
+*.zsh
+*.sh
+_*
