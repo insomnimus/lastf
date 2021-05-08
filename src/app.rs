@@ -43,6 +43,12 @@ usage:
         .about("do not ignore hidden top level files and directories")
         .takes_value(false);
 
+    let not_recursive = Arg::new("not-recursive")
+        .short('n')
+        .long("not-recursive")
+        .about("do not recursively calculate")
+        .takes_value(false);
+
     let time = Arg::new("time")
         .short('t')
         .long("time")
@@ -63,6 +69,7 @@ usage:
         .arg(accessed)
         .arg(oldest)
         .arg(hidden)
+        .arg(not_recursive)
         .arg(time)
         .arg(path)
         .arg(n)
