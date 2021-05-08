@@ -48,17 +48,17 @@ impl Cmd {
         let hidden = matches.is_present("hidden");
 
         Self {
-            not_recursive,
             modified,
-            files,
-            folders,
-            accessed,
             created,
+            accessed,
             oldest,
-            time,
-            path,
             hidden,
+            not_recursive,
+            time,
+            folders,
+            files,
             n,
+            path,
         }
     }
 
@@ -113,8 +113,7 @@ impl Cmd {
             .map(|x| x.metadata())
             .filter_map(|e| e.ok())
             .map(|x| self.evaluate_file(&x))
-            .filter(|o| o.is_some())
-            .map(|o| o.unwrap())
+            .flatten()
             .max()
     }
 
@@ -149,12 +148,10 @@ impl Cmd {
                     } else {
                         self.evaluate_dir(p)
                     }
+                } else if self.folders {
+                    None
                 } else {
-                    if self.folders {
-                        None
-                    } else {
-                        self.evaluate_file(&md)
-                    }
+                    self.evaluate_file(&md)
                 }
             }
             _ => None,
@@ -170,11 +167,8 @@ fn is_hidden(d: &DirEntry) -> bool {
 }
 
 fn main() {
-    match Cmd::from_args().execute() {
-        Err(e) => {
-            eprintln!("error: {:?}", e);
-            process::exit(1);
-        }
-        _ => (),
-    };
+    if let Err(e) = Cmd::from_args().execute() {
+        eprintln!("error: {:?}", e);
+        process::exit(1);
+    }
 }
