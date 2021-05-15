@@ -143,7 +143,9 @@ impl Cmd {
                 if md.is_dir() {
                     if self.files {
                         None
-                    } else if self.not_recursive {
+                    } else if self.not_recursive
+                        || (!self.accessed && !self.modified && self.created)
+                    {
                         self.evaluate_file(&md)
                     } else {
                         self.evaluate_dir(p)
