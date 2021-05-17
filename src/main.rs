@@ -1,11 +1,14 @@
 mod app;
 
 use walkdir::WalkDir;
+use chrono::Duration;
 
 use std::fs::{self, DirEntry, Metadata};
 use std::path::Path;
 use std::process;
 use std::time::SystemTime;
+
+const EPOCH: SystemTime= SystemTime::UNIX_EPOCH;
 
 struct Cmd {
     modified: bool,
@@ -88,18 +91,18 @@ impl Cmd {
                 .get(0)
                 .expect("internal logic error, assumed iterator had at least 1 item");
             if self.time {
-                println!("{}\t{:?}", f.display(), t);
+                print_path_time(&f, t);
             } else {
-                println!("{}", f.display());
+                print_path(&f);
             }
             return Ok(());
         }
 
         for (f, t) in files.into_iter().take(self.n as usize) {
             if self.time {
-                println!("{}\t{:?}", f.display(), t);
+                print_path_time(&f, &t);
             } else {
-                println!("{}", f.display());
+                print_path(&f);
             }
         }
 
@@ -163,8 +166,27 @@ impl Cmd {
 
 fn is_hidden(d: &DirEntry) -> bool {
     match d.file_name().to_str() {
-        Some(s) => s.starts_with('.'),
+        Some(s) => s!= "." && s.starts_with('.'),
         None => false,
+    }
+}
+
+fn print_path(p: impl AsRef<Path>) {
+    if let Some(s) = p.as_ref().as_os_str().to_str() {
+        let x = s.trim_start_matches("./");
+        #[cfg(windows)]
+        let x = x.trim_start_matches(".\\");
+        println!("{}", x);
+    }
+}
+
+fn print_path_time(p: impl AsRef<Path>, t: &SystemTime) {
+    if let Some(s) = p.as_ref().as_os_str().to_str() {
+        let path = s.trim_start_matches("./");
+        #[cfg(windows)]
+        let path= path.trim_start_matches(".\\");
+		let time= t.duration_since(EPOCH).map(|x| Duration::from_std(x).unwrap()).unwrap();
+        println!("{}\t{}", path, time);
     }
 }
 

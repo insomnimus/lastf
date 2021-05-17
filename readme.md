@@ -2,6 +2,8 @@
 
 Lastf is a cli tool that displays files, sorting them by various date filters such as the date created.
 
+> Note: This tool works best on windows systems because of the way windows keeps track of files.
+
 ## But why?
 
 Because as far as i know, no system updates the directory metadata if a file under it gets modified. Lastf traverses the directory and checks for that.
