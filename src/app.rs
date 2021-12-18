@@ -1,97 +1,105 @@
-use clap::{crate_name, crate_version, App, AppSettings, Arg};
+use std::path::PathBuf;
 
-pub fn new() -> App<'static> {
-    let app = App::new(crate_name!())
-        .version(crate_version!())
-        .about("display last modified files and directories")
-        .long_about("display last used/modified/created files and directories")
-        .long_version(crate_version!())
-		.setting(AppSettings::UnifiedHelpMessage)
-        .help_template(
-            "{bin}, {about}
-usage:
-	{bin} [OPTIONS] [max]
-{unified}
-{after-help}",
-        )
-		.after_long_help("if none of the --accessed, --modified or --created flags are set, the behaviour is the same as if
-the --created and the --modified flags were set");
+use clap::{
+	arg,
+	crate_version,
+	App,
+	Arg,
+};
 
-    let modified = Arg::new("modified")
-        .short('m')
-        .long("modified")
-        .about("sort by date last modified")
-        .takes_value(false);
+pub struct Cmd {
+	pub file_type: FileType,
+	pub args: Vec<PathBuf>,
+	pub recurse: bool,
+	pub accessed: bool,
+	pub modified: bool,
+	pub created: bool,
+	pub oldest: bool,
+	pub hidden: bool,
+	pub quiet: bool,
+	pub n: usize,
+}
 
-    let created = Arg::new("created")
-        .short('c')
-        .long("created")
-        .about("sort by date created")
-        .takes_value(false);
+impl Cmd {
+	pub fn from_args() -> Self {
+		let app = App::new("lf")
+			.version(crate_version!())
+			.about("Show most recent files.")
+			.args(&[
+				arg!(-a --accessed "Sort by date last accessed."),
+				arg!(-m --modified "Sort by date last modified."),
+				arg!(-c --created "Sort by date created."),
+				arg!(-o --oldest "Show oldest files first."),
+				arg!(-f --files "Show files, not directories."),
+				arg!(-d --directories "Show directories, not files."),
+				arg!(-D --hidden "Do not ignore hidden files and directories."),
+				arg!(-r --recurse "Recursively search under directories."),
+				arg!(-q --quiet "Do not report non fatal errors."),
+				arg!(n: -n <N> "Show top N items.")
+					.default_value("1")
+					.validator(validate_positive_number),
+				Arg::new("args")
+					.help(
+						"Any number of files or directories (glob patterns are parsed on windows).",
+					)
+					.default_value(".")
+					.forbid_empty_values(true)
+					.multiple_values(true),
+			]);
 
-    let accessed = Arg::new("accessed")
-        .short('a')
-        .long("accessed")
-        .about("sort by date last accessed")
-        .takes_value(false);
+		let m = app.get_matches_from(wild::args());
 
-    let oldest = Arg::new("oldest")
-        .short('o')
-        .long("oldest")
-        .about("show oldest first")
-        .takes_value(false);
+		let accessed = m.is_present("accessed");
+		let mut modified = m.is_present("modified");
+		let mut created = m.is_present("created");
+		if !created && !modified && !accessed {
+			created = true;
+			modified = true;
+		}
 
-    let hidden = Arg::new("hidden")
-        .short('d')
-        .long("hidden")
-        .about("do not ignore hidden top level files and directories")
-        .takes_value(false);
+		let recurse = m.is_present("recurse");
+		let hidden = m.is_present("hidden");
+		let oldest = m.is_present("oldest");
+		let quiet = m.is_present("quiet");
 
-    let not_recursive = Arg::new("not-recursive")
-        .short('n')
-        .long("not-recursive")
-        .about("do not recursively calculate")
-        .takes_value(false);
+		let file_type = match (m.is_present("files"), m.is_present("directories")) {
+			(true, false) => FileType::File,
+			(false, true) => FileType::Directory,
+			_ => FileType::Any,
+		};
 
-    let time = Arg::new("time")
-        .short('t')
-        .long("time")
-        .about("show the related date along with file names")
-        .takes_value(false);
+		let n = m.value_of("n").unwrap().parse::<usize>().unwrap();
+		let args = m
+			.values_of("args")
+			.unwrap()
+			.map(PathBuf::from)
+			.collect::<Vec<_>>();
 
-    let folders = Arg::new("folders")
-        .short('F')
-        .long("folders")
-        .about("only display directories")
-        .takes_value(false)
-        .conflicts_with("files");
+		Self {
+			accessed,
+			modified,
+			created,
+			quiet,
+			recurse,
+			hidden,
+			n,
+			args,
+			oldest,
+			file_type,
+		}
+	}
+}
 
-    let files = Arg::new("files")
-        .short('f')
-        .long("files")
-        .about("only display regular files")
-        .long_about("do not display directories")
-        .takes_value(false)
-        .conflicts_with("folders");
+fn validate_positive_number(s: &str) -> Result<(), String> {
+	match s.parse::<usize>() {
+		Ok(0) | Err(_) => Err(String::from("the value must be a positive integer")),
+		_ => Ok(()),
+	}
+}
 
-    let path = Arg::new("path")
-        .short('p')
-        .long("path")
-        .about("path of the directory to evaluate")
-        .takes_value(true)
-        .default_value(".");
-
-    let n = Arg::new("n").about("maximum number of items to display");
-
-    app.arg(modified)
-        .arg(created)
-        .arg(accessed)
-        .arg(oldest)
-        .arg(hidden)
-        .arg(not_recursive)
-        .arg(time)
-        .arg(folders)
-        .arg(files)
-        .arg(path)
-        .arg(n)
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum FileType {
+	Any,
+	File,
+	Directory,
 }
