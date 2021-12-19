@@ -23,7 +23,7 @@ impl Cmd {
 
 		let walker = walker
 			.standard_filters(false)
-			.hidden(self.hidden)
+			.hidden(!self.hidden)
 			.max_depth(if self.recurse { None } else { Some(1) })
 			.build_parallel();
 
